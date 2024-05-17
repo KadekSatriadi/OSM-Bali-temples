@@ -4,17 +4,17 @@ library(sf)
 library(dplyr)
 
 #check available features
-available_features()
+#available_features()
 
-tags <-available_tags("amenity")
-tags_building <-available_tags("building")
+#tags <-available_tags("amenity")
+#tags_building <-available_tags("building")
 
 #define boundaries
 bali_bb <- getbb("Bali")
-bali_bb
+#bali_bb
 
 #create overpass query, exclude mosque church cathedral synagogue
-bali_pow <- bali_bb %>%
+bali_opw <- bali_bb %>%
   opq() %>%
   add_osm_feature(key = "amenity", value = "place_of_worship") %>%
   add_osm_feature(key = "building", value = "!mosque") %>%
@@ -24,29 +24,26 @@ bali_pow <- bali_bb %>%
   osmdata_sf()
 
 #extract points
+sf_polygons <- bali_opw$osm_polygons #only extract polygons as the points contain the boundary of the place, rather than the center point (e.g, rectangular place will be 4 points)
 
-bali_pow_df<- st_drop_geometry(bali_pow$osm_points)
-coordinates <- st_coordinates(bali_pow$osm_points)
-bali_pow_df <- cbind(coordinates, bali_pow_df)
+bali_pow_df <- st_sf(st_geometry(sf_polygons))
+bali_pow_df <- cbind(bali_pow_df, sf_polygons)
 
-num_na <- sum(is.na(bali_pow_df$name))
+#num_na <- sum(is.na(bali_pow_df$name))
 
 # Print the result
-print(num_na)
-print(nrow(bali_pow_df))
+#print(num_na)
+#print(nrow(bali_pow_df))
 
 #plot
-sf_points <- bali_pow$osm_points
 leaflet() %>%
   addTiles() %>%
-  #addMarkers(data = bali_pow$osm_points)
-  addCircleMarkers(data = sf_points, 
-                   radius = 4, # Adjust the size of the circles if needed
-                   color = ifelse(is.na(sf_points$name), "#8da0cb", "#fc8d62"), 
-                   stroke = FALSE,
-                   fillOpacity = 1,
-                   popup = paste("Name:", sf_points$name, "<br>",
-                                 "Amenity:", sf_points$amenity))
+  addPolygons(data = sf_polygons, 
+                   fill = "black", 
+              color = ifelse(is.na(sf_polygons$name), "#8da0cb", "#fc8d62"), 
+              fillOpacity = 1,
+                   popup = paste("Name:", sf_polygons$name, "<br>",
+                                 "Amenity:", sf_polygons$amenity))
 
 
 #save all, NA, and named
