@@ -26,8 +26,7 @@ bali_opw <- bali_bb %>%
 #extract points
 sf_polygons <- bali_opw$osm_polygons #only extract polygons as the points contain the boundary of the place, rather than the center point (e.g, rectangular place will be 4 points)
 
-bali_pow_df <- st_sf(st_geometry(sf_polygons))
-bali_pow_df <- cbind(bali_pow_df, sf_polygons)
+bali_pow_df <- as.data.frame(sf_polygons) 
 
 #num_na <- sum(is.na(bali_pow_df$name))
 
@@ -48,7 +47,10 @@ leaflet() %>%
 
 #save all, NA, and named
 
+# Extract the geometry attribute from the sf polygon object
+bali_pow_df$geometry <- st_as_text(bali_pow_df$geometry)
+
 write.csv(bali_pow_df, "Bali_place_of_worship_all.csv", row.names = F)
-write.csv(bali_pow_df %>% dplyr::filter(!is.na(name)), "Bali_place_of_worship_named.csv", row.names = F)
+write.csv(bali_pow_df %>%  dplyr::filter(!is.na(name)), "Bali_place_of_worship_named.csv", row.names = F)
 write.csv(bali_pow_df %>% dplyr::filter(is.na(name)), "Bali_place_of_worship_unnamed.csv", row.names = F)
 
